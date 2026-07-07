@@ -61,6 +61,12 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
+      - name: Debug Secrets
+        run: |
+          echo "Host length: $(echo -n '${{ secrets.EC2_HOST }}' | wc -c)"
+          echo "Username length: $(echo -n '${{ secrets.EC2_USERNAME }}' | wc -c)"
+          echo "Key MD5: $(echo -n '${{ secrets.EC2_SSH_KEY }}' | tr -d '\r\n ' | md5sum)"
+
       - name: Copy docker-compose.yml to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
