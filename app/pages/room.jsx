@@ -217,7 +217,31 @@ export default function CodeRunner() {
             } catch (e) {}
             return false;
           };
-          const passed = expected && compareOutput(stdout, expected);
+          let passed = expected && compareOutput(stdout, expected);
+
+          if (!passed && expected && activeProblem) {
+            try {
+              const valRes = await fetch("/api/validate-output", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  problemTitle: activeProblem.title,
+                  problemDescription: activeProblem.description,
+                  input: tc.input,
+                  expectedOutput: expected,
+                  actualOutput: stdout,
+                }),
+              });
+              if (valRes.ok) {
+                const valData = await valRes.json();
+                if (valData.success && valData.valid) {
+                  passed = true;
+                }
+              }
+            } catch (e) {
+              console.error("AI validation failed:", e);
+            }
+          }
 
           setTestResults((prev) => {
             const updated = [...prev];

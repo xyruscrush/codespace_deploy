@@ -102,3 +102,70 @@ Example JSON output format:
     });
   }
 }
+
+export async function validateOutput(req, res) {
+  try {
+    const { problemTitle, problemDescription, input, expectedOutput, actualOutput } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(200).json({ success: true, valid: false });
+    }
+
+    const prompt = `You are a strict code execution output validator.
+Given this coding problem:
+Title: "${problemTitle}"
+Description:
+${problemDescription}
+
+A user ran their code on this test case:
+Input:
+${input}
+
+Expected Output (one of the valid outputs):
+${expectedOutput}
+
+User's Actual Output:
+${actualOutput}
+
+Determine if the user's actual output is a mathematically/logically correct and valid alternative solution for the given input based on the problem description.
+Note:
+- In some problems, the order of elements in the output does not matter.
+- In some problems, there can be multiple correct pairs of indices or values (e.g. for Two Sum, multiple pairs might sum to the target).
+- If the actual output is correct and satisfies all problem requirements, mark it as valid.
+
+Format your output STRICTLY as a JSON object:
+{
+  "valid": true or false,
+  "reason": "A short 1-sentence explanation of why it is valid or invalid"
+}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API returned status ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    const jsonText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!jsonText) throw new Error("No response from Gemini");
+
+    const result = JSON.parse(jsonText.trim());
+    return res.status(200).json({ success: true, valid: result.valid, reason: result.reason });
+  } catch (error) {
+    console.error("Validation error:", error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}

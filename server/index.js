@@ -67,7 +67,8 @@ const { roomTokenHandler, validateRoomToken } = await import(
 );
 const { logoutRoom } = await import("./handler/logoutRoom.js");
 const { getProblemsList, getProblemDetails } = await import("./handler/problems.js");
-const { generateAiTestCases } = await import("./handler/aiService.js");
+const { generateAiTestCases, validateOutput } = await import("./handler/aiService.js");
+app.post("/api/validate-output", validateOutput);
 app.post("/api/room-exist", async (req, res) => {
   try {
     const { roomId } = req.body;
