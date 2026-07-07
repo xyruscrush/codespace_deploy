@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE}
+    container_name: codespace-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    restart: always
+
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    container_name: codespace-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
