@@ -199,7 +199,25 @@ export default function CodeRunner() {
 
           const stdout = (result.stdout || result.compile_output || result.stderr || "").trim();
           const expected = (tc.expectedOutput || "").trim();
-          const passed = expected && stdout === expected;
+          
+          const compareOutput = (act, exp) => {
+            if (act === exp) return true;
+            try {
+              const actParts = act.split(/\s+/);
+              const expParts = exp.split(/\s+/);
+              if (actParts.length === expParts.length && actParts.length > 0) {
+                const actNums = actParts.map(Number);
+                const expNums = expParts.map(Number);
+                if (actNums.every(n => !isNaN(n)) && expNums.every(n => !isNaN(n))) {
+                  actNums.sort((a, b) => a - b);
+                  expNums.sort((a, b) => a - b);
+                  return actNums.join(" ") === expNums.join(" ");
+                }
+              }
+            } catch (e) {}
+            return false;
+          };
+          const passed = expected && compareOutput(stdout, expected);
 
           setTestResults((prev) => {
             const updated = [...prev];

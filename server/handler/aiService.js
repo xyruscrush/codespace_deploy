@@ -5,9 +5,9 @@ function getFallbackTestCases(title) {
   const lowerTitle = (title || "").toLowerCase();
   if (lowerTitle.includes("two sum")) {
     return [
-      { input: "1 2 3 4\n5", expectedOutput: "0 3" },
-      { input: "10 20 30\n50", expectedOutput: "1 2" },
-      { input: "-1 -2 -3 -4 -5\n-8", expectedOutput: "2 4" }
+      { input: "2 7 11 15\n9", expectedOutput: "0 1" },
+      { input: "3 2 4\n6", expectedOutput: "1 2" },
+      { input: "3 3\n6", expectedOutput: "0 1" }
     ];
   }
   if (lowerTitle.includes("parentheses")) {
@@ -50,6 +50,8 @@ ${problemDescription}
 
 Generate exactly 3 diverse test cases for verifying solutions to this problem.
 Include edge cases (empty lists, extreme inputs, negative values, etc.).
+
+CRITICAL: Every test case MUST have a single, unique correct answer. Avoid inputs that allow multiple different correct answers (for example, in 'Two Sum', do not provide inputs where multiple different pairs sum to the target).
 Make sure the input format matches the problem description exactly, and the expectedOutput is exactly what the solution should return or print.
 
 Format your output STRICTLY as a JSON array of objects, where each object has:
