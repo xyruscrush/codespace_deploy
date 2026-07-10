@@ -58,9 +58,7 @@ const { leaveTheRoom } = await import("./handler/leaveTheRoom.js");
 const { signupHandler } = await import("./handler/signup.js");
 const { signinHandler } = await import("./handler/signin.js");
 const { refreshTokenHandler } = await import("./handler/refreshToken.js");
-const { verifyOtpSignin, verifyOtpSignup, resendOtp } = await import(
-  "./handler/verifyOtp.js"
-);
+
 const { logout } = await import("./handler/logout.js");
 const { roomTokenHandler, validateRoomToken } = await import(
   "./handler/roomtoken.js"
@@ -137,9 +135,7 @@ app.post("/api/logout", logout);
 app.post("/api/signup", signupHandler);
 app.post("/api/signin", signinHandler);
 app.post("/api/refresh-token", refreshTokenHandler);
-app.post("/api/verify-otp-signup", verifyOtpSignup);
-app.post("/api/verify-otp-signin", verifyOtpSignin);
-app.post("/api/resend-otp", resendOtp);
+
 app.post("/api/logoutRoom", logoutRoom);
 app.get("/api/problems", getProblemsList);
 app.get("/api/problems/:id", getProblemDetails);

@@ -1,9 +1,9 @@
-import crypto from "crypto";
-import { sendOtpEmail } from "../utils/email.js";
 import bcrypt from "bcrypt";
-import { Otp, User } from "../models/schema.js";
+import jwt from "jsonwebtoken";
+import { User } from "../models/schema.js";
 import dotenv from "dotenv";
 dotenv.config();
+
 async function signinHandler(req, res) {
   try {
     const { email, password } = req.body;
@@ -19,14 +19,29 @@ async function signinHandler(req, res) {
         .status(400)
         .json({ success: false, message: "Invalid password" });
 
-    const otp = crypto.randomInt(100000, 999999).toString();
-    console.log(`[TESTING] Generated OTP for ${email}: ${otp}`);
+    const token = jwt.sign(
+      { id: user._id, name: user.name, email: user.email },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
 
-    await Otp.create({ email, otp, createdAt: new Date() });
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
 
-    await sendOtpEmail(email, otp);
-
-    res.status(200).json({ success: true, message: "OTP sent to email" });
+    return res.status(200).json({
+      success: true,
+      message: "Signin successful",
+      data: {
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -37,3 +52,4 @@ async function signinHandler(req, res) {
 }
 
 export { signinHandler };
+
