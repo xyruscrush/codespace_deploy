@@ -98,6 +98,8 @@ jobs:
             echo "ROOM_SECRET=${{ secrets.ROOM_SECRET }}" >> .env
             echo "USER_EMAIL=${{ secrets.USER_EMAIL }}" >> .env
             echo "APP_PASSWORD=${{ secrets.APP_PASSWORD }}" >> .env
+            echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
+            echo "FROM_EMAIL=${{ secrets.FROM_EMAIL }}" >> .env
 
             # Pull latest images and restart containers
             docker compose pull

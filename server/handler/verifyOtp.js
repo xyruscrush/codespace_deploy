@@ -3,9 +3,11 @@ import bcrypt from "bcrypt";
 import { Otp, User } from "../models/schema.js";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import nodemailer from "nodemailer";
+import { sendOtpEmail } from "../utils/email.js";
 dotenv.config();
 const SECRET = process.env.JWT_SECRET || "your_jwt_secret";
+// ... (omitted verifyOtpSignup and verifyOtpSignin which do not use nodemailer)
+
 
 async function verifyOtpSignup(req, res) {
   try {
@@ -122,20 +124,7 @@ const resendOtp = async (req, res) => {
     const otp = crypto.randomInt(100000, 999999).toString();
     await Otp.deleteOne({ email });
     await Otp.create({ email, otp, createdAt: new Date() });
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.USER_EMAIL,
-        pass: process.env.APP_PASSWORD,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.USER_EMAIL,
-      to: email,
-      subject: "Your OTP Code",
-      text: `Your OTP code is: ${otp}`,
-    });
+    await sendOtpEmail(email, otp);
 
     res.status(200).json({ success: true, message: "OTP resent to email" });
   } catch (err) {

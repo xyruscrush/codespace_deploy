@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import { Otp, User } from "../models/schema.js";
-import nodemailer from "nodemailer";
+import { sendOtpEmail } from "../utils/email.js";
 import crypto from "crypto";
 async function signupHandler(req, res) {
   try {
@@ -20,23 +20,8 @@ async function signupHandler(req, res) {
 
     await Otp.create({ email, otp, createdAt: new Date() });
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.USER_EMAIL,
-        pass: process.env.APP_PASSWORD,
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.USER_EMAIL,
-      to: email,
-      subject: "Your OTP Code",
-      text: `Your OTP code is: ${otp}`,
-    };
-
     try {
-      await transporter.sendMail(mailOptions);
+      await sendOtpEmail(email, otp);
       res.status(200).json({ success: true, message: "OTP sent" });
     } catch (error) {
       res.status(500).json({
