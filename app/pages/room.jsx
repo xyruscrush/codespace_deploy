@@ -362,6 +362,7 @@ export default function CodeRunner() {
         body: JSON.stringify({
           problemTitle: activeProblem.title,
           problemDescription: activeProblem.description,
+          testCases: activeProblem.testCases || [],
         }),
       });
       
@@ -371,7 +372,8 @@ export default function CodeRunner() {
       }
 
       if (result.success && Array.isArray(result.data)) {
-        setTestCases((prev) => [...prev, ...result.data]);
+        const taggedCases = result.data.map(tc => ({ ...tc, isAiGenerated: true }));
+        setTestCases((prev) => [...prev, ...taggedCases]);
         toast.success("Generated 3 new AI test cases!");
       }
     } catch (err) {
@@ -972,16 +974,19 @@ export default function CodeRunner() {
                         >
                           <div className="space-y-1">
                             <span className="text-[10px] font-bold text-slate-500 uppercase">
-                              Case {index + 1} {index >= 3 && " (AI Generated)"}
+                              Case {index + 1} {tc.isAiGenerated && " (AI Generated)"}
                             </span>
                             <div className="text-[11px] font-mono text-slate-300">
-                              Input: <span className="text-slate-455">{tc.input.replace(/"/g, "").replace(/\n/g, " ↵ ")}</span>
+                              Input: <span className="text-slate-400">{tc.input.replace(/"/g, "").replace(/\n/g, " ↵ ")}</span>
+                            </div>
+                            <div className="text-[11px] font-mono text-slate-300">
+                              Expected: <span className="text-slate-400">{((tc.expectedOutput === "Run to verify" ? "TBD" : tc.expectedOutput) || "").replace(/"/g, "").replace(/\n/g, " ↵ ")}</span>
                             </div>
                             {result && result.status !== "running" && (
-                              <div className="text-[10px] font-mono mt-1 text-slate-400">
-                                Expected: <span className="text-slate-350">{(result.expected || "").replace(/"/g, "")}</span> | Got:{" "}
+                              <div className="text-[11px] font-mono text-slate-300">
+                                Got:{" "}
                                 <span className={result.status === "passed" ? "text-emerald-400" : "text-rose-400"}>
-                                  {(result.actual || "Empty").replace(/"/g, "")}
+                                  {(result.actual || "Empty").replace(/"/g, "").replace(/\n/g, " ↵ ")}
                                 </span>
                               </div>
                             )}

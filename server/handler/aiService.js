@@ -33,7 +33,7 @@ function getFallbackTestCases(title) {
 
 export async function generateAiTestCases(req, res) {
   try {
-    const { problemTitle, problemDescription } = req.body;
+    const { problemTitle, problemDescription, testCases } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
@@ -42,17 +42,29 @@ export async function generateAiTestCases(req, res) {
       return res.status(200).json({ success: true, data: fallbackCases });
     }
 
+    // Build few-shot context from existing test cases to guide Gemini on format
+    let fewShotContext = "";
+    if (testCases && Array.isArray(testCases)) {
+      const validCases = testCases.filter(
+        (tc) => tc.input && tc.expectedOutput && tc.expectedOutput.trim() !== "" && tc.expectedOutput !== "Run to verify"
+      );
+      if (validCases.length > 0) {
+        fewShotContext = `\n\nHere are the existing test cases for this problem. You MUST follow their exact input and expectedOutput format (e.g. array formatting, space separated, or newlines):\n` +
+          validCases.map((tc, idx) => `Example ${idx + 1}:\nInput:\n${tc.input}\nExpected Output:\n${tc.expectedOutput}`).join("\n\n") + "\n";
+      }
+    }
+
     const prompt = `You are a strict test case generator for a coding platform.
 Given this coding problem:
 Title: "${problemTitle}"
 Description:
 ${problemDescription}
-
+${fewShotContext}
 Generate exactly 3 diverse test cases for verifying solutions to this problem.
 Include edge cases (empty lists, extreme inputs, negative values, etc.).
 
 CRITICAL: Every test case MUST have a single, unique correct answer. Avoid inputs that allow multiple different correct answers (for example, in 'Two Sum', do not provide inputs where multiple different pairs sum to the target).
-Make sure the input format matches the problem description exactly, and the expectedOutput is exactly what the solution should return or print.
+Make sure the input format matches the problem description and existing examples exactly, and the expectedOutput is exactly what the solution should return or print.
 
 Format your output STRICTLY as a JSON array of objects, where each object has:
 - "input": A string containing the standard input (stdin) for the test case. If there are multiple inputs, they must be separated by newlines exactly as the problem's input format defines.
@@ -91,8 +103,25 @@ Example JSON output format:
       throw new Error("No text content returned from Gemini API");
     }
 
-    const testCases = JSON.parse(jsonText.trim());
-    return res.status(200).json({ success: true, data: testCases });
+    let parsedCases = JSON.parse(jsonText.trim());
+    if (parsedCases && !Array.isArray(parsedCases)) {
+      if (Array.isArray(parsedCases.testCases)) {
+        parsedCases = parsedCases.testCases;
+      } else if (Array.isArray(parsedCases.data)) {
+        parsedCases = parsedCases.data;
+      } else if (typeof parsedCases === "object") {
+        const arrayKey = Object.keys(parsedCases).find((key) => Array.isArray(parsedCases[key]));
+        if (arrayKey) {
+          parsedCases = parsedCases[arrayKey];
+        }
+      }
+    }
+
+    if (!Array.isArray(parsedCases)) {
+      throw new Error("Failed to parse Gemini response as a JSON array of test cases.");
+    }
+
+    return res.status(200).json({ success: true, data: parsedCases });
   } catch (error) {
     console.error("Gemini test case generation error:", error);
     return res.status(500).json({
